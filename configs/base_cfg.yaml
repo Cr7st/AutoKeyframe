@@ -1,0 +1,37 @@
+train_dataset:
+  base_cfg:
+    dataset_dir: ./datasets/lafan1_keyframes/
+    action_dict: #lafan1_action_dict_9:
+      1: aiming
+      2: dance
+      3: fallAndGetUp
+      4: fight
+      5: ground
+      6: jumps
+      7: obstacles
+      8: run
+      9: walk
+    action_repr: scalar
+    mirror: False
+
+test_dataset:
+  base_cfg:
+    dataset_dir: ./datasets/lafan1_keyframes/
+    action_dict: #lafan1_action_dict_9:
+      1: aiming
+      2: dance
+      3: fallAndGetUp
+      4: fight
+      5: ground
+      6: jumps
+      7: obstacles
+      8: run
+      9: walk
+    action_repr: scalar
+    mirror: False
+
+eval_motion_name: 'eval_motion.npz'
+reprocess: True
+mib: False
+
+# fix_seed: None

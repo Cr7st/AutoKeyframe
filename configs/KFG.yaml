@@ -1,0 +1,199 @@
+task: KeyframeGenerator
+exp_name: base_model
+version: v1
+
+gpus: [0]
+
+# train_dataset_module: data.keyframe_dataset.KeyframeDataset
+train_dataset_module: data.keyframe_dataset.PairFrameDataset
+test_dataset_module: data.test_gen_dataset.TrajHintDataset
+fid_dataset_module: data.test_gen_dataset.MotionExtractorDataset
+mib_dataset_module: data.test_gen_dataset.MotionExtractorDataset
+
+lightning_module: lightning_modules.keyframe_module.KeyframeModule
+
+evaluators_cfg:
+  - module: lightning_modules.FID.FIDModule
+    kwargs:
+      path: ./exps/MotionFID/keyframes_v3/checkpoint/best.ckpt
+      stats_path: ./data/model_stats/FID_kf
+      fid_cfg:
+        data_repr: gpos
+        name: FID
+        model_cfg:
+          module: model.extractor_model.TransformerEncoder
+          kwargs:
+            latent_dim: 256
+            ff_dim: 1024
+            num_heads: 4
+            num_layers: 4
+            class_nums: 9
+            pooling_func: max
+  - module: lightning_modules.penetration.PenetrationEvaluator
+    kwargs:
+      threshold: -3
+  - module: lightning_modules.penetration.FootSkateEvaluator
+    kwargs:
+      threshold_height: 2.5
+      threshold_vel: 30
+
+train_dataset:
+  base_cfg:
+    dataset_dir: ./sample_data/
+    mirror: False
+  use_prev_rot: True
+  use_global_rot: False # cover use_prev_rot
+  split: train
+
+test_dataset:
+  give_hint: False
+  split: test
+
+fid_dataset:
+  base_cfg:
+    dataset_dir: ./sample_data/
+    action_dict: #lafan1_action_dict_9:
+      1: aiming
+      2: dance
+      3: fallAndGetUp
+      4: fight
+      5: ground
+      6: jumps
+      7: obstacles
+      8: run
+      9: walk
+    action_repr: scalar
+    mirror: False
+  split: test
+  data_repr: gpos
+  augment: False
+
+mib_dataset:
+  base_cfg:
+    dataset_dir: ./sample_data/
+    action_dict: #lafan1_action_dict_9:
+      1: aiming
+      2: dance
+      3: fallAndGetUp
+      4: fight
+      5: ground
+      6: jumps
+      7: obstacles
+      8: run
+      9: walk
+    action_repr: scalar
+    mirror: False
+  split: test
+  data_repr: gpos
+  augment: False
+
+mib_path: ""  # Path to MIB model (not yet open-sourced)
+
+lightning_cfg:
+  result_dir: ${result_dir}
+  use_prev_rot: ${train_dataset.use_prev_rot}
+  use_global_rot: ${train_dataset.use_global_rot}
+  enable_grad_guide: False
+  diffusion_cfg:
+    guidance_on: prev_frame
+    guidance_scale: 0.5
+    inference_steps: 50
+    mask_cond_prob: 0.1
+    model_cfg:
+      module: model.transformers.TransformerEncoder
+      kwargs:
+        input_dim: 6
+        latent_dim: 512
+        ff_dim: 1024
+        num_heads: 4
+        num_layers: 8
+        condition_dims: [6, 1, 1, 3, 3, 1]
+        conditions: ["prev_frame", "interval", "action", "velocity", "position", "height"]
+    scheduler_cfg:
+      type: DDIM
+      kwargs:
+        num_train_timesteps: 1000
+        beta_schedule: squaredcos_cap_v2
+        clip_sample: False
+        prediction_type: sample
+  loss_cfg:
+    diffusion_loss:
+      weight: 1.0
+    joint_pos_loss:
+      loss_type: L2
+      weight: 0.0001
+    global_rot_loss:
+      loss_type: L2
+      weight: 1.
+#    obs_control_loss:
+#      loss_type: Masked L2
+#      weight: 0.
+#    penetration_loss:
+#      loss_type: L2
+#      weight: 0.0001
+
+train:
+  train_controlnet: False
+#  resume_from_checkpoint: './exps/KeyframeGenerator/split_train_random_previous_v0/checkpoint/last.ckpt'
+  batch_size: 64
+  num_workers: 8
+  lr: 1e-4
+  optim: AdamW
+  scheduler:
+    type: StepLR
+    gamma: 0.9
+    step_size: 200
+
+test:
+  batch_size: 64
+  num_workers: 1
+
+fid:
+  batch_size: 64
+  num_workers: 8
+
+mib:
+  batch_size: 64
+  num_workers: 1
+
+trainer:
+  logger: tensorboard
+  callbacks:
+    - type: TQDMProgressBar
+    - type: ModelCheckpoint
+      kwargs:
+        dirpath: ${checkpoint_dir}
+        monitor: FID
+        save_top_k: 5
+        mode: min
+        filename: '{epoch}-{FID:.3f}-{acc:.3f}'
+        save_last: True
+  kwargs:
+    max_epochs: 4000
+    check_val_every_n_epoch: 50
+    log_every_n_steps: 100
+    num_sanity_val_steps: 0
+
+test_path:
+  # aiming1 subject1
+  - sample_data/aiming1_subject1_2830_3048.npz
+  # dance2 subject2
+  - sample_data/dance2_subject2_1360_1578.npz
+  - sample_data/dance2_subject2_2200_2418.npz
+  # fallAndGetUp1
+  - sample_data/fallAndGetUp1_subject4_310_528.npz
+  # fight1 subject3ff
+  - sample_data/fight1_subject3_4720_4938.npz
+  - sample_data/fight1_subject3_6400_6618.npz
+  # ground1 subject4
+  - sample_data/ground1_subject4_3880_4098.npz
+  # jump1 subject5
+  - sample_data/jumps1_subject5_100_318.npz
+  - sample_data/jumps1_subject5_6190_6408.npz
+  # obstacles4 subject2
+  - sample_data/obstacles4_subject2_310_528.npz
+  # run1 subject5
+  - sample_data/run1_subject5_4930_5148.npz
+  - sample_data/run1_subject5_100_318.npz
+  # walk2 subject4
+  - sample_data/walk2_subject4_4300_4518.npz

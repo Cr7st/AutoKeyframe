@@ -1,0 +1,7 @@
+torch
+lightning
+numpy
+scipy
+omegaconf
+tqdm
+matplotlib

@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Checkpoints & experiment outputs
+*.ckpt
+exps/KeyframeGenerator/
+exps/MotionFID/
+lightning_logs/
+
+# Data
+datasets/
+
+# IDE
+.vscode/
+.idea/
+
+# Claude
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
