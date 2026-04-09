@@ -132,7 +132,7 @@ We provide a Blender plugin for visualizing generated keyframes.
 
 ## Note on MIB
 
-The Motion In-Betweening (MIB) component described in the paper is **not included** in this release. This repository only covers the keyframe generation module. For MIB, we recommend using [Two-Stage Transformer](https://github.com/Piotrekszmel/Two-Stage-Transformer-for-Human-Motion-In-Betweening) as a compatible alternative.
+The Motion In-Betweening (MIB) component described in the paper is **not included** in this release. This repository only covers the keyframe generation module. For MIB, we recommend using [Two-Stage Transformer]([https://github.com/Piotrekszmel/Two-Stage-Transformer-for-Human-Motion-In-Betweening](https://github.com/victorqin/motion_inbetweening)) as a compatible alternative. This method requires a 10-frame context window for inbetweening. In practice, we copy the first keyframe and repeat it to fill that window. 
 
 ## Citation
 
